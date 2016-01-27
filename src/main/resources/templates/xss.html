@@ -1,0 +1,10 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>Angular Expression - safe</title>
+<script src="angular-1.4.8.min.js"></script>
+</head>
+<body ng-app>
+	<div th:text="${username}"></div>
+	<p><a href="./">No XSS</a></p>
+</body>
+</html>
