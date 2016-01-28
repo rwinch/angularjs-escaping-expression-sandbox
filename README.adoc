@@ -1,3 +1,5 @@
+NOTE: This was originally posted on https://spring.io/admin/blog/2358-xss-exploits-with-angularjs-escaping-the-expression-sandbox[spring.io/blog].
+
 = Introduction
 
 https://angularjs.org/[AngularJS] is a popular JavaScript framework that allows embedding https://code.angularjs.org/1.4.9/docs/guide/expression[expressions] within double curly braces. https://code.angularjs.org/1.4.9/docs/guide/expression#example[For example], the expression `1+2={{1+2}}` will render as `1+2=3`.
@@ -111,7 +113,7 @@ eval('x=1} } };alert(1)//');
 
 By overriding the native function `charAt` we can bypass Angular's Expression Sandbox and allow us to execute `alert(1)`. Refer to http://blog.portswigger.net/2016/01/xss-without-html-client-side-template.html[XSS without HTML: Client-Side Template Injection with AngularJS] for complete details of how the exploit works.
 
-NOTE: This only works in Chrome.
+NOTE: This payload targets Chrome and AngularJS 1.4.8. It is not known to work in other browsers.
 
 = Conclusion
 
