@@ -1,3 +1,5 @@
+INFO: This is a summary of http://blog.portswigger.net/2016/01/xss-without-html-client-side-template.html[XSS without HTML: Client-Side Template Injection with AngularJS]. Previously the citation was in the middle of the document and difficult to find. The goal of the summary is to present the exploit and a fix without all the nuances, not to claim the work as my own.
+
 NOTE: This was originally posted on https://spring.io/admin/blog/2358-xss-exploits-with-angularjs-escaping-the-expression-sandbox[spring.io/blog].
 
 = Introduction
